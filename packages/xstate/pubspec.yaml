@@ -1,4 +1,11 @@
 name: xstate
+description: WIP
+version: 0.0.1
 homepage: https://github.com/sahandevs/xstate.dart
+license: MIT
+
+environment:
+  sdk: '>=2.7.0 <3.0.0'
+
 dependecies:
   
