@@ -5,7 +5,10 @@ homepage: https://github.com/sahandevs/xstate.dart
 license: MIT
 
 environment:
-  sdk: '>=2.7.0 <3.0.0'
+  sdk: ">=2.7.0 <3.0.0"
 
 dependecies:
-  
+
+dev_dependencies:
+  pedantic: ^1.0.0
+  test: ^1.0.0
