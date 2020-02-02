@@ -79,5 +79,30 @@ void main() {
       expect(machine.transition("fetching", "RESOLVE"), "done");
       expect(machine.transition("fetching", "ERROR"), "idle");
     });
+
+    test('creating a machine with symbol state works', () {
+      final machine = Machine<Symbol>(
+        initial: #idle,
+        states: {
+          #idle: State(
+            on: {
+              #FETCH: #fetching,
+            },
+          ),
+          #fetching: State(
+            on: {
+              #RESOLVE: #done,
+              #ERROR: #idle,
+            },
+          ),
+          #done: State()
+        },
+      );
+
+      expect(machine, isNotNull);
+      expect(machine.transition(#idle, #FETCH), #fetching);
+      expect(machine.transition(#fetching, #RESOLVE), #done);
+      expect(machine.transition(#fetching, #ERROR), #idle);
+    });
   });
 }
