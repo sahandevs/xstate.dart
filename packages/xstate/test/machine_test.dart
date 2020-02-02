@@ -32,6 +32,12 @@ void main() {
       },
     );
 
+    test('descrbing a machine gives a correct message', () {
+      expect(machine.describle, equals("Machine of LightState"));
+      final _idMachine = Machine(id: "test");
+      expect(_idMachine.describle, equals("Machine of test"));
+    });
+
     test(
         'creating machine with values infers the types and constructor doesn\'t throw an error',
         () {
