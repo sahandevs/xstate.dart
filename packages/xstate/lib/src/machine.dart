@@ -27,9 +27,9 @@ class State<TState, TEvent> {
 }
 
 class StateValue<TState> {
-  final TState value;
-  final StateValue child;
-  const StateValue(this.value, [this.child = null]);
+  TState value;
+  StateValue child;
+  StateValue(this.value, [this.child = null]);
 
   bool matches<MatchPattern>(MatchPattern pattern) {
     if (value == null && pattern == null) return true;
@@ -69,45 +69,49 @@ extension<T> on Iterable<T> {
 
 extension MachineMethods<TState> on Machine<TState> {
   StateValue<TState> start<T>({Iterable<T> initial}) {
-    var child = this.states[initial.firstOrNull ?? this.initial];
+    final _initial = initial.firstOrNull ?? this.initial;
+    var child = this.states[_initial];
     if (child.child != null)
       return StateValue(
-          this.initial, child.child.start(initial: initial.skip(1)));
+        _initial,
+        child.child.start(initial: initial.skip(1)),
+      );
     return StateValue(this.initial);
   }
 
   StateValue<TState> transition<TEvent, TCurrent>(
       TCurrent current, TEvent event) {
-    State state;
-    List<String> _currentPath;
-    if (current is StateValue) {
-      state = this.states[current.value];
-    } else if (current is String) {
-      final String _current = current;
-      _currentPath = _current.split('.');
-      state = this.states[_currentPath.first];
-      if (_currentPath.length > 1) {
-        final childStateValue = state.child.transition(
-            state.child.start(initial: _currentPath.skip(1)), event);
-        if (childStateValue.value == null) {
-          // child didn't have the event
-          final _value = state.on[event]; // check if parent can handle it
-          if (_value == null) return StateValue(null);
-          return StateValue(_value);
-        }
-        return StateValue(_currentPath.first as TState, childStateValue);
-      }
-    } else {
-      state = this.states[current];
-    }
-    final targetStateValue = state.on[event];
-    if (targetStateValue == null) return StateValue(null);
-    // check if targetState has child
-    final targetState = this.states[targetStateValue];
-    if (targetState.child != null)
-      return StateValue(targetStateValue,
-          targetState.child.start(initial: _currentPath.skip(1)));
+    final valueState = current as String;
+    assert(valueState != null);
 
-    return StateValue(targetStateValue);
+    final _path = valueState.split(".");
+    final _current = this.start(initial: _path);
+
+    return this._handleEvent(_current, event);
+  }
+
+  StateValue _handleEvent<T, TState>(StateValue<TState> current, T event) {
+    // start from the bottom
+    final machines = <Machine>[];
+    final states = <TState>[];
+    var lastMachine = this;
+    var lastState = current;
+    while (lastMachine != null) {
+      machines.add(lastMachine);
+      states.add(lastState.value);
+      lastMachine = lastMachine.states[lastState.value].child;
+      lastState = lastState.child;
+    }
+    for (final machine in machines.reversed) {
+      final result = machine.states[states.last].on[event];
+      if (result != null) {
+        final _result = this.start(initial: [result]);
+        _result.value = result;
+        return _result;
+      } else {
+        states.removeLast();
+      }
+    }
+    return StateValue(null);
   }
 }
