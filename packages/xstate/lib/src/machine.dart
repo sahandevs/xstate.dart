@@ -17,7 +17,10 @@ class Machine<TState> {
 class State<TState, TEvent> {
   final Map<TEvent, TState> on;
   final Machine child;
+  final String id;
+  
   const State({
+    this.id,
     this.on,
     this.child,
   });
