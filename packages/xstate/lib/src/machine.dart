@@ -7,15 +7,17 @@ class Machine<TState> {
     String id,
     this.initial,
     this.states,
-  }): this.id = id;
+  }) : this.id = id;
 
   String get describle => "Machine of ${id ?? TState}";
 }
 
 class State<TState, TEvent> {
   final Map<TEvent, TState> on;
+  final Machine child;
   const State({
     this.on,
+    this.child,
   });
 }
 
