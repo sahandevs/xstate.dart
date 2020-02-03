@@ -9,7 +9,7 @@ testAll<T>(Machine machine, Map<T, Map<dynamic, T>> expected) {
         result,
         targetState,
         reason:
-            "Transition is [$state---$event--->$result].But it should be [$state---$event--->]$targetState",
+            "Transition is [$state---$event--->$result].But it should be [$state---$event--->$targetState]",
       );
     });
   });
