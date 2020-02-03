@@ -18,7 +18,7 @@ class State<TState, TEvent> {
   final Map<TEvent, TState> on;
   final Machine child;
   final String id;
-  
+
   const State({
     this.id,
     this.on,
@@ -26,7 +26,23 @@ class State<TState, TEvent> {
   });
 }
 
+class StateValue<TState> {
+  final TState value;
+  const StateValue(this.value);
+
+  @override
+  bool operator ==(o) => o is TState && o == value;
+}
+
 extension MachineMethods<TState> on Machine<TState> {
-  TState transition<TEvent>(TState current, TEvent event) =>
-      this.states[current].on[event];
+  StateValue<TState> transition<TEvent, TCurrent>(
+      TCurrent current, TEvent event) {
+    TState result;
+    if (current is StateValue) {
+      result = this.states[current.value].on[event];
+    } else {
+      result = this.states[current].on[event];
+    }
+    return StateValue(result);
+  }
 }

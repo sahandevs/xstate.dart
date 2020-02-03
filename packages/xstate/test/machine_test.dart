@@ -47,12 +47,12 @@ void main() {
 
     test('giving a machine currentState and an event will give the next state',
         () {
-      expect(machine.transition(LightState.Green, LightStateEvent.TIMER),
-          equals(LightState.Yellow));
-      expect(machine.transition(LightState.Yellow, LightStateEvent.TIMER),
-          equals(LightState.Red));
-      expect(machine.transition(LightState.Red, LightStateEvent.TIMER),
-          equals(LightState.Green));
+      expect(machine.transition(LightState.Green, LightStateEvent.TIMER).value,
+         LightState.Yellow);
+      expect(machine.transition(LightState.Yellow, LightStateEvent.TIMER).value,
+          LightState.Red);
+      expect(machine.transition(LightState.Red, LightStateEvent.TIMER).value,
+          LightState.Green);
     });
 
     test('creating a machine with string state works', () {
@@ -75,9 +75,9 @@ void main() {
       );
 
       expect(machine, isNotNull);
-      expect(machine.transition("idle", "FETCH"), "fetching");
-      expect(machine.transition("fetching", "RESOLVE"), "done");
-      expect(machine.transition("fetching", "ERROR"), "idle");
+      expect(machine.transition("idle", "FETCH").value, "fetching");
+      expect(machine.transition("fetching", "RESOLVE").value, "done");
+      expect(machine.transition("fetching", "ERROR").value, "idle");
     });
 
     test('creating a machine with symbol state works', () {
@@ -100,9 +100,9 @@ void main() {
       );
 
       expect(machine, isNotNull);
-      expect(machine.transition(#idle, #FETCH), #fetching);
-      expect(machine.transition(#fetching, #RESOLVE), #done);
-      expect(machine.transition(#fetching, #ERROR), #idle);
+      expect(machine.transition(#idle, #FETCH).value, #fetching);
+      expect(machine.transition(#fetching, #RESOLVE).value, #done);
+      expect(machine.transition(#fetching, #ERROR).value, #idle);
     });
   });
 }
