@@ -2,11 +2,13 @@ class Machine<TState> {
   final String id;
   final TState initial;
   final Map<TState, State<TState, Object>> states;
+  final dynamic history;
 
   const Machine({
     String id,
     this.initial,
     this.states,
+    this.history,
   }) : this.id = id;
 
   String get describle => "Machine of ${id ?? TState}";
