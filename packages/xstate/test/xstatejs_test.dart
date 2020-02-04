@@ -106,27 +106,27 @@ main() {
         initial: 'A',
         states: {
           'A': State(
-            on: {6: 'H'},
+            on: {"6": 'H'},
             child: Machine(
               initial: 'B',
               states: {
                 'B': State(
-                  on: {5: 'C'},
+                  on: {"5": 'C'},
                   child: Machine(
                     initial: 'E',
                     states: {
                       'D': State(on: {}),
-                      'E': State(on: {3: 'D'})
+                      'E': State(on: {"3": 'D'})
                     },
                   ),
                 ),
                 'C': State(
-                  on: {4: 'B.E'},
+                  on: {"4": 'B.E'},
                   child: Machine(
                     initial: 'G',
                     states: {
                       'F': State(on: {}),
-                      'G': State(on: {2: 'F'})
+                      'G': State(on: {"2": 'F'})
                     },
                   ),
                 ),
@@ -137,8 +137,8 @@ main() {
           ),
           'H': State(
             on: {
-              1: 'A.hist',
-              7: 'A.deepHist' // 6.10
+              "1": 'A.hist',
+              "7": 'A.deepHist' // 6.10
             },
           ),
         },
@@ -201,20 +201,20 @@ main() {
     test('Example 6.8', () {
       const machine = Machine(initial: 'A', states: {
         'A': State(
-          on: {6: 'F'},
+          on: {"6": 'F'},
           child: Machine(
             initial: 'B',
             states: {
-              'B': State(on: {1: 'C'}),
-              'C': State(on: {2: 'E'}),
-              'D': State(on: {3: 'B'}),
-              'E': State(on: {4: 'B', 5: 'D'}),
+              'B': State(on: {"1": 'C'}),
+              'C': State(on: {"2": 'E'}),
+              'D': State(on: {"3": 'B'}),
+              'E': State(on: {"4": 'B', "5": 'D'}),
               'hist': State(child: Machine(history: true)),
             },
           ),
         ),
         'F': State(
-          on: {5: 'A.hist'},
+          on: {"5": 'A.hist'},
         ),
       });
 
@@ -239,27 +239,27 @@ main() {
         initial: 'A',
         states: {
           'A': State(
-            on: {3: 'B'},
+            on: {"3": 'B'},
             child: Machine(
               initial: 'D',
               states: {
-                'C': State(on: {2: '#B'}),
-                'D': State(on: {1: 'C'}),
+                'C': State(on: {"2": '#B'}),
+                'D': State(on: {"1": 'C'}),
               },
             ),
           ),
           'B': State(
             id: 'B',
-            on: {4: 'A.D'},
+            on: {"4": 'A.D'},
           ),
         },
       );
 
       const expected = {
-        'A': {1: 'A.C', 2: 'A.D', 3: 'B', 4: 'A.D'},
-        'B': {1: 'B', 2: 'B', 3: 'B', 4: 'A.D'},
-        'A.C': {1: 'A.C', 2: 'B', 3: 'B', 4: 'A.C'},
-        'A.D': {1: 'A.C', 2: 'A.D', 3: 'B', 4: 'A.D'}
+        'A': {"1": 'A.C', "2": 'A.D', "3": 'B', "4": 'A.D'},
+        'B': {"1": 'B', "2": 'B', "3": 'B', "4": 'A.D'},
+        'A.C': {"1": 'A.C', "2": 'B', "3": 'B', "4": 'A.C'},
+        'A.D': {"1": 'A.C', "2": 'A.D', "3": 'B', "4": 'A.D'}
       };
 
       testAll(machine, expected);

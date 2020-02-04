@@ -27,32 +27,22 @@ class State<TState, TEvent> {
 }
 
 class StateValue<TState> {
-  TState value;
-  StateValue child;
-  StateValue(this.value, [this.child = null]);
+  List<TState> value;
+  StateValue([this.value = const []]);
+  StateValue.leaf(TState top) : this.value = [top];
 
   bool matches<MatchPattern>(MatchPattern pattern) {
-    if (value == null && pattern == null) return true;
-    if (pattern is StateValue) {
-      return pattern == this;
-    }
+    if (value[0] == null && pattern == null) return true;
+    // if (pattern is StateValue) {
+    //   return pattern == this;
+    // }
     if (pattern is String) {
-      return this.describe() == pattern;
+      return this.describe().startsWith(pattern);
     }
     return false;
   }
 
-  String describe() => "$value" + (child == null ? "" : ".${child.describe()}");
-
-  @override
-  bool operator ==(o) {
-    if (o is TState) return o == value;
-    if (o is StateValue) {
-      final StateValue _o = o;
-      return _o.value == value && _o.child == child;
-    }
-    return false;
-  }
+  String describe() => value.join(".");
 }
 
 extension<T> on Iterable<T> {
@@ -69,12 +59,15 @@ extension MachineMethods<TState> on Machine<TState> {
   StateValue<TState> start<T>({Iterable<T> initial}) {
     final _initial = initial.firstOrNull ?? this.initial;
     var child = this.states[_initial];
+    if (child == null)
+      throw new Exception(
+          "state '$_initial' not found on [${this.describle} ${this.states.keys}]");
     if (child.child != null)
-      return StateValue(
+      return StateValue([
         _initial,
-        child.child.start(initial: initial.skip(1)),
-      );
-    return StateValue(_initial);
+        ...child.child.start(initial: initial.skip(1)).value,
+      ]);
+    return StateValue.leaf(_initial);
   }
 
   StateValue<TState> transition<TEvent, TCurrent>(
@@ -91,25 +84,25 @@ extension MachineMethods<TState> on Machine<TState> {
   StateValue _handleEvent<T, TState>(StateValue<TState> current, T event) {
     // start from the bottom
     final machines = <Machine>[];
-    final states = <TState>[];
+    final states = <TState>[...current.value];
     var lastMachine = this;
-    var lastState = current;
+    var lastState = 0;
     while (lastMachine != null) {
       machines.add(lastMachine);
-      states.add(lastState.value);
-      lastMachine = lastMachine.states[lastState.value].child;
-      lastState = lastState.child;
+      lastMachine = lastMachine.states[states[lastState]].child;
+      lastState++;
     }
     for (final machine in machines.reversed) {
       final result = machine.states[states.last].on[event];
       if (result != null) {
-        final _result = this.start(initial: [result]);
-        _result.value = result;
-        return _result;
+        final _result = machine.start(initial: [result]);
+        states.removeLast();
+        states.addAll(_result.value as List<TState>);
+        return StateValue(states);
       } else {
         states.removeLast();
       }
     }
-    return StateValue(null);
+    return StateValue.leaf(null);
   }
 }
