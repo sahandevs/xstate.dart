@@ -65,8 +65,6 @@ extension<T> on Iterable<T> {
   }
 }
 
-// TODO: needs a rewreite
-
 extension MachineMethods<TState> on Machine<TState> {
   StateValue<TState> start<T>({Iterable<T> initial}) {
     final _initial = initial.firstOrNull ?? this.initial;
@@ -76,7 +74,7 @@ extension MachineMethods<TState> on Machine<TState> {
         _initial,
         child.child.start(initial: initial.skip(1)),
       );
-    return StateValue(this.initial);
+    return StateValue(_initial);
   }
 
   StateValue<TState> transition<TEvent, TCurrent>(
@@ -87,7 +85,7 @@ extension MachineMethods<TState> on Machine<TState> {
     final _path = valueState.split(".");
     final _current = this.start(initial: _path);
 
-    return this._handleEvent(_current, event);
+    return _handleEvent(_current, event);
   }
 
   StateValue _handleEvent<T, TState>(StateValue<TState> current, T event) {
