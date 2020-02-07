@@ -17,4 +17,6 @@ jobs:
         cd ./packages/xstate
         pub get
     - name: Run tests
-      run: pub run test
+      run: |
+        cd ./packages/xstate
+        pub run test
