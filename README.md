@@ -1,4 +1,4 @@
-# xstate.dart
+# xstate.dart [![pub package](https://img.shields.io/pub/v/xstate.svg)](https://pub.dev/packages/xstate) ![Dart CI](https://github.com/sahandevs/xstate.dart/workflows/Dart%20CI/badge.svg)
 WIP xstate for dart &amp; flutter
 
 ### Example
