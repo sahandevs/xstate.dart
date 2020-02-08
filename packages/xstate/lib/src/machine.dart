@@ -1,8 +1,15 @@
+import 'dart:convert';
+
+part 'machine_json.dart';
+
 class Machine<TState> {
   final String id;
   final TState initial;
   final Map<TState, State<TState, Object>> states;
   final dynamic history;
+
+  factory Machine.fromJson(Map data)
+    => buildMachineFromJson(data);
 
   const Machine({
     String id,
@@ -12,6 +19,7 @@ class Machine<TState> {
   }) : this.id = id;
 
   String get describle => "Machine of ${id ?? TState}";
+  String get json => jsonEncode(machineToJson(this));
 }
 
 class State<TState, TEvent> {
