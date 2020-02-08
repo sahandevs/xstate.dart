@@ -59,11 +59,12 @@ machine.transition('loaded.paused', 'EJECT'); // not_loaded
 - [ ] Parallel State Machines
 - [ ] History States
 - [ ] Refrence by id. `State(on: {"2": '#B'})`
-- [ ] `Machine.fromJson({})` ability to create machines with JSON Schema
+- [x] `Machine.fromJson({})` ability to create machines with JSON Schema
 - [ ] `Machine.fromSCXML('<></>')` ability to create machines with SCXML
 - [ ] Binding package for [flutter](https://github.com/flutter/flutter)
 - [ ] Binding package for [flutter_hook](https://github.com/rrousselGit/flutter_hooks)
 - [ ] Utility package for writing tests
+- [ ] More tests
 
 
 ##### Tooling
