@@ -5,44 +5,44 @@ WIP xstate for dart &amp; flutter
 CD Player:
 
 ```dart
-const machine = Machine(
-  id: 'cd',
-  initial: 'not_loaded',
-  states: {
-    'not_loaded': State(on: {'INSERT_CD': 'loaded'}),
-    'loaded': State(
-      on: {'EJECT': 'not_loaded'},
-      child: Machine(
-        initial: 'stopped',
-        states: {
-          "stopped": State(on: {"PLAY": "playing"}),
-          "playing": State(
-            on: {
-              "STOP": "stopped",
-              "EXPIRED_END": "stopped",
-              "EXPIRED_MID": "playing",
-              "PAUSE": "paused"
-            },
-          ),
-          "paused": State(
-            on: {
-              "PAUSE": "playing",
-              "PLAY": "playing",
-              "STOP": "stopped"
-            },
-            child: Machine(
-              initial: "not_blank",
-              states: {
-                "blank": State(on: {"TIMER": "not_blank"}),
-                "not_blank": State(on: {"TIMER": "blank"})
-              },
-            ),
-          )
+final machine = Machine.fromJson({
+  "key": "cd",
+  "initial": "not_loaded",
+  "states": {
+    "not_loaded": {
+      "on": {"INSERT_CD": "loaded"}
+    },
+    "loaded": {
+      "initial": "stopped",
+      "on": {"EJECT": "not_loaded"},
+      "states": {
+        "stopped": {
+          "on": {"PLAY": "playing"}
         },
-      ),
-    ),
-  },
-);
+        "playing": {
+          "on": {
+            "STOP": "stopped",
+            "EXPIRED_END": "stopped",
+            "EXPIRED_MID": "playing",
+            "PAUSE": "paused"
+          }
+        },
+        "paused": {
+          "initial": "not_blank",
+          "states": {
+            "blank": {
+              "on": {"TIMER": "not_blank"}
+            },
+            "not_blank": {
+              "on": {"TIMER": "blank"}
+            }
+          },
+          "on": {"PAUSE": "playing", "PLAY": "playing", "STOP": "stopped"}
+        }
+      }
+    }
+  }
+});
 
 machine.start(); // not_loaded
 machine.transition('not_loaded', 'INSERT_CD'); // loaded.stopped
