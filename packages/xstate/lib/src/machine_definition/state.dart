@@ -1,6 +1,6 @@
 part of 'machine_definition.dart';
 
-abstract class IState implements SCXMLChild {
+abstract class IState implements SCXMLChild, SCXMLElement {
   /// The identifier for this state.
   final Id id;
 
@@ -14,7 +14,7 @@ abstract class StateWithChildren<T> {
 }
 
 // marker interface
-abstract class StateChild {}
+abstract class StateChild implements SCXMLElement {}
 
 /// Holds the representation of a [State].
 class State extends IState implements StateWithChildren<StateChild> {
@@ -27,28 +27,43 @@ class State extends IState implements StateWithChildren<StateChild> {
 
   bool get isCompuned => (children?.length ?? 0) > 0;
 
-  State({Id id, this.initial, this.children}) : super(id);
+  State({Id id, this.initial, this.children}) : super(id) {
+    children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }
 
 // marker interface
-abstract class ParallelStateChild {}
+abstract class ParallelStateChild implements SCXMLElement {}
 
 /// The [Parallel] element encapsulates a set of child states which
 /// are simultaneously active when the parent element is active.
 class Parallel extends IState implements StateWithChildren<ParallelStateChild> {
   final List<ParallelStateChild> children;
 
-  Parallel({Id id, this.children}) : super(id);
+  Parallel({Id id, this.children}) : super(id) {
+    children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }
 
 // marker interface
-abstract class FinalStateChild {}
+abstract class FinalStateChild implements SCXMLElement {}
 
 /// [Final] represents a final state of an [SCXML] or compound [State] element.
 class Final extends IState implements StateWithChildren<FinalStateChild> {
   final List<FinalStateChild> children;
 
-  Final({Id id, this.children}) : super(id);
+  Final({Id id, this.children}) : super(id) {
+    children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }
 
 class History extends IState {
@@ -59,5 +74,10 @@ class History extends IState {
   /// and must specify a non-null 'target' whose value is a valid state specification.
   final List<Transition> children;
 
-  History({Id id, this.children}) : super(id);
+  History({Id id, this.children}) : super(id) {
+    children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }

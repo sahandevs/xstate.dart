@@ -4,14 +4,24 @@ part of 'machine_definition.dart';
 class OnEntry implements StateChild, ParallelStateChild, FinalStateChild {
   final List<ExecutableContent> children;
 
-  OnEntry({this.children});
+  OnEntry({this.children}) {
+    this.children.forEach((child) => child.parent = this);
+  }
+  
+  @override
+  SCXMLElement parent;
 }
 
 /// A wrapper element containing executable content to be executed when the state is exited.
 class OnExit implements StateChild, ParallelStateChild, FinalStateChild {
   final List<ExecutableContent> children;
 
-  OnExit({this.children});
+  OnExit({this.children}) {
+    this.children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }
 
 enum TransitionType {
@@ -52,8 +62,16 @@ class Transition implements StateChild {
     this.target,
     this.type = TransitionType.External,
     this.children,
-  });
+  }) {
+    this.children.forEach((child) => child.parent = this);
+  }
+
+  @override
+  SCXMLElement parent;
 }
 
 // TODO: not implemented
-class Invoke implements StateChild {}
+class Invoke implements StateChild {
+  @override
+  SCXMLElement parent;
+}

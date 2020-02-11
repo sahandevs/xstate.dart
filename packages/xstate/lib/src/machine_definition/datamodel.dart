@@ -10,4 +10,7 @@ class DataModel implements SCXMLChild {
   final List<DataModelChild> children;
 
   DataModel({this.children = const []});
+
+  @override
+  SCXMLElement parent;
 }

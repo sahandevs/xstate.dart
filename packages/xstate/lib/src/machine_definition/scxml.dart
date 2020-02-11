@@ -1,7 +1,12 @@
 part of 'machine_definition.dart';
 
 // marker interface
-abstract class SCXMLChild {}
+abstract class SCXMLElement {
+  SCXMLElement parent = null;
+}
+
+// marker interface
+abstract class SCXMLChild implements SCXMLElement {}
 
 /// The top-level wrapper element, which carries 
 /// The actual state machine consists of its children.
@@ -9,7 +14,7 @@ abstract class SCXMLChild {}
 /// Note that only one of the children is active at any one time.
 /// See [3.11 Legal State Configurations and Specifications](https://www.w3.org/TR/scxml/#LegalStateConfigurations) 
 /// for details.
-class SCXML {
+class SCXML implements SCXMLElement {
   /// The id of the initial state(s) for the document.
   /// If not specified, the default initial state is the first child state in document order.
   final IdRef initial;
@@ -25,5 +30,10 @@ class SCXML {
   // TODO(sahandevs): add binding
 
   SCXML({IdRef initial, this.name, this.children})
-      : initial = initial ?? children.whereType<State>().first;
+      : initial = initial ?? children.whereType<State>().first {
+        children.forEach((child) => child.parent = this);
+      }
+
+  @override
+  SCXMLElement parent = null;
 }
