@@ -9,11 +9,15 @@ abstract class IState implements SCXMLChild {
   IState._(this.id);
 }
 
+abstract class StateWithChildren<T> {
+  List<T> get children;
+}
+
 // marker interface
 abstract class StateChild {}
 
 /// Holds the representation of a [State].
-class State extends IState {
+class State extends IState implements StateWithChildren<StateChild> {
   /// The id of the default initial state (or states) for this state.
   ///
   /// TODO: MUST NOT be specified in conjunction with the <initial> element. MUST NOT occur in atomic states.
@@ -31,7 +35,7 @@ abstract class ParallelStateChild {}
 
 /// The [Parallel] element encapsulates a set of child states which
 /// are simultaneously active when the parent element is active.
-class Parallel extends IState {
+class Parallel extends IState implements StateWithChildren<ParallelStateChild> {
   final List<ParallelStateChild> children;
 
   Parallel({Id id, this.children}) : super(id);
@@ -41,7 +45,7 @@ class Parallel extends IState {
 abstract class FinalStateChild {}
 
 /// [Final] represents a final state of an [SCXML] or compound [State] element.
-class Final extends IState {
+class Final extends IState implements StateWithChildren<FinalStateChild> {
   final List<FinalStateChild> children;
 
   Final({Id id, this.children}) : super(id);
