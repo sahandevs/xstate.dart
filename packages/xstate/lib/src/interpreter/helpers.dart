@@ -1,5 +1,44 @@
 part of 'interpreter.dart';
 
+enum FindTargetSearchType {
+  /// starting from siblings then go to the top
+  ParentToTop,
+
+  /// start from siblings then go to the bottom
+  ParentToBottom,
+
+  /// first take [FindTargetSearchType.ParentToBottom] approach if not found
+  /// take [FindTargetSearchType.ParentToTop] approach
+  FirstBottomThenTop,
+
+  /// first take [FindTargetSearchType.ParentToTop] approach if not found
+  /// take [FindTargetSearchType.ParentToBottom] approach
+  FirstTopThenBottom,
+}
+
+/// finds target [SCXMLElement] that [target] refres to.
+/// [start] is the starting point to the find the target
+SCXMLElement findOneTarget(SCXMLElement start, IdRef target,
+    {FindTargetSearchType searchType = FindTargetSearchType.ParentToTop}) {
+  assert(searchType ==
+      FindTargetSearchType.ParentToTop); // TODO: support other methods
+
+  if (start is Identifiable) {
+    if (target.isRefersTo(start.id)) return start;
+  }
+
+  if (start.parent != null && start.parent is SCXMLElementWithChildren) {
+    final _parent = start.parent as SCXMLElementWithChildren;
+    var _found = _parent.children
+        .whereType<Identifiable>()
+        .firstWhere((child) => target.isRefersTo(child.id), orElse: () => null);
+    if (_found != null) return _found;
+    return findOneTarget(_parent, target);
+  }
+
+  return null;
+}
+
 /// If [state2] is null, returns the set of all ancestors of [state1] in ancestry order
 /// ([state1]'s parent followed by the parent's parent, etc. up to an including the <scxml> element).
 /// If [state2] is non-null, returns in ancestry order the set of all ancestors of [state1], up to but
@@ -13,8 +52,8 @@ LinkedHashSet<SCXMLElement> getProperAncestors(
 
   if (state1 == state2 || state1.parent == state2) return LinkedHashSet();
 
-  if (state1 is StateWithChildren) if (isDescendant(
-      state2, state1 as StateWithChildren)) return LinkedHashSet();
+  if (state1 is StateWithChildren && isDescendant(state2, state1))
+    return LinkedHashSet();
   // TODO: what should happen when [state2] is not proper ancestor of state1 ?
   final result = LinkedHashSet<SCXMLElement>();
   if (state1.parent == null) return result;

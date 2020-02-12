@@ -1,6 +1,6 @@
 part of 'machine_definition.dart';
 
-abstract class IState implements SCXMLChild, SCXMLElement {
+abstract class IState implements SCXMLChild, SCXMLElement, Identifiable {
   /// The identifier for this state.
   final Id id;
 
@@ -9,7 +9,7 @@ abstract class IState implements SCXMLChild, SCXMLElement {
   IState._(this.id);
 }
 
-abstract class StateWithChildren<T> {
+abstract class StateWithChildren<T> implements SCXMLElement, SCXMLElementWithChildren<T> {
   List<T> get children;
 }
 
@@ -33,6 +33,7 @@ class State extends IState implements StateWithChildren<StateChild> {
 
   @override
   SCXMLElement parent;
+
 }
 
 // marker interface

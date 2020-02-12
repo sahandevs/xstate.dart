@@ -5,6 +5,10 @@ abstract class SCXMLElement {
   SCXMLElement parent = null;
 }
 
+abstract class SCXMLElementWithChildren<T> extends SCXMLElement {
+  List<T> get children;
+}
+
 // marker interface
 abstract class SCXMLChild implements SCXMLElement {}
 
