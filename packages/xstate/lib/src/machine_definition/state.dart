@@ -25,8 +25,6 @@ class State extends IState implements StateWithChildren<StateChild> {
 
   final List<StateChild> children;
 
-  bool get isCompuned => (children?.length ?? 0) > 0;
-
   State({Id id, this.initial, this.children}) : super(id) {
     children.forEach((child) => child.parent = this);
   }
@@ -55,7 +53,7 @@ class Parallel extends IState implements StateWithChildren<ParallelStateChild> {
 // marker interface
 abstract class FinalStateChild implements SCXMLElement {}
 
-/// [Final] represents a final state of an [SCXML] or compound [State] element.
+/// [Final] represents a final state of an [SCXMLRoot] or compound [State] element.
 class Final extends IState implements StateWithChildren<FinalStateChild> {
   final List<FinalStateChild> children;
 

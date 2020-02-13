@@ -18,7 +18,7 @@ abstract class SCXMLChild implements SCXMLElement {}
 /// Note that only one of the children is active at any one time.
 /// See [3.11 Legal State Configurations and Specifications](https://www.w3.org/TR/scxml/#LegalStateConfigurations) 
 /// for details.
-class SCXML implements SCXMLElement {
+class SCXMLRoot implements SCXMLElement {
   /// The id of the initial state(s) for the document.
   /// If not specified, the default initial state is the first child state in document order.
   final IdRef initial;
@@ -33,7 +33,7 @@ class SCXML implements SCXMLElement {
 
   // TODO(sahandevs): add binding
 
-  SCXML({IdRef initial, this.name, this.children})
+  SCXMLRoot({IdRef initial, this.name, this.children})
       : initial = initial ?? children.whereType<State>().first {
         children.forEach((child) => child.parent = this);
       }

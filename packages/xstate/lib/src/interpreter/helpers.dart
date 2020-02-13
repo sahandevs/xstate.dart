@@ -1,5 +1,59 @@
 part of 'interpreter.dart';
 
+/// Return true if [state] is a compound [State] and one of its children
+/// is an active [Final] state (i.e. is a member of the current configuration),
+/// or if s is a [Parallel] state and [isInFinalState] is true of all its children.
+bool isInFinalState(IState state, InterpreterGlobals globals) {
+  if (isCompundState(state))
+    return getChildStates(state).any(
+      (s) => isInFinalState(s, globals) && globals.configuration.contains(s),
+    );
+  if (state is Parallel)
+    return getChildStates(state).every((s) => isInFinalState(s, globals));
+
+  return false;
+}
+
+/// Return the compound [State] such that
+/// 1) all states that are exited or entered as a result of taking
+///  [transition] are descendants of it
+/// 2) no descendant of it has this property.
+State getTransitionDomain(Transition transition) {
+  final tstates = getEffectiveTargetStates(transition);
+  if (tstates.length == 0)
+    return null;
+  else if (transition.type == TransitionType.Internal &&
+      isCompundState(transition.parent) &&
+      tstates.every((s) => isDescendant(s, transition.parent))) {
+    return transition.parent;
+  } else {
+    return findLCCA([transition.parent, ...tstates]);
+  }
+}
+
+/// The Least Common Compound Ancestor is the [State] or [SCXMLRoot] elements
+/// such that s is a proper ancestor of all states on [stateList] and no
+/// descendant of s has this property. Note that there is guaranteed to be
+/// such an element since the [SCXMLRoot] wrapper element is a common ancestor
+/// of all states. Note also that since we are speaking of proper ancestor
+/// (parent or parent of a parent, etc.) the LCCA is never a member of [stateList].
+SCXMLElement findLCCA(Iterable<SCXMLElement> stateList) {
+  return getProperAncestors(stateList.first, null)
+      .where((x) => (x is State && isCompundState(x)) || x is SCXMLRoot)
+      .where((x) => stateList.skip(1).every((s) => isDescendant(s, x)))
+      .first;
+}
+
+/// Returns the states that will be the target when 'transition' is taken, dereferencing any history states.
+LinkedHashSet<IState> getEffectiveTargetStates(Transition transition) {
+  final targets = LinkedHashSet<IState>();
+  // TODO: support multi targets
+  final target = findOneTarget(transition.parent, transition.target);
+  // TODO: add support for history valu
+  if (target != null) targets.add(target as IState);
+  return targets;
+}
+
 enum FindTargetSearchType {
   /// starting from siblings then go to the top
   ParentToTop,
@@ -73,9 +127,22 @@ bool isDescendant(IState state, StateWithChildren parent) =>
     });
 
 /// Returns a list containing all [State], [Final], and [Paralel] children of [state].
-List<IState> getChildStates<T>(StateWithChildren<T> state) =>
-    _getStateOrFinalOrParallel(state.children);
+List<IState> getChildStates(IState state) {
+  if (state is StateWithChildren) {
+    final _state = state as StateWithChildren;
+    return _getStateOrFinalOrParallel(_state.children);
+  }
+  return const [];
+}
 
 List<IState> _getStateOrFinalOrParallel(List children) => children
     .where((item) => item is Parallel || item is State || item is Final)
     .toList();
+
+bool isCompundState(IState state) {
+  if (state is StateWithChildren) {
+    final _state = state as StateWithChildren;
+    return (_state.children?.length ?? 0) > 0;
+  }
+  return false;
+}
