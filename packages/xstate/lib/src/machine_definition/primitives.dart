@@ -21,8 +21,11 @@ class Id {
 
 class Event {
   final String name;
-  const Event(this.name);
-}
+  final Object data;
 
+  Event(this.name, {this.data});
+
+  Event.done(Id event, {this.data}) : this.name = "done.state.${event.ref}";
+}
 
 typedef bool BooleanExpression<T>(T context);

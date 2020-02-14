@@ -1,12 +1,190 @@
 part of 'interpreter.dart';
 
+/// source: https://www.w3.org/TR/scxml
+
+/// This function selects all transitions that are enabled in the current configuration that do not require
+/// an event trigger. First find a transition with no 'event' attribute whose condition evaluates to true.
+/// If multiple matching transitions are present, take the first in document order. If none are present,
+/// search in the state's ancestors in ancestry order until one is found. As soon as such a transition is found,
+/// add it to enabledTransitions, and proceed to the next atomic state in the configuration.
+/// If no such transition is found in the state or its ancestors, proceed to the next state in the configuration.
+/// When all atomic states have been visited and transitions selected, filter the set of enabled transitions,
+/// removing any that are preempted by other transitions, then return the resulting set.
+LinkedHashSet<Transition> selectEventlessTransitions(
+  InterpreterGlobals globals,
+) {
+  var enabledTransitions = LinkedHashSet<Transition>();
+  final atomicStates = globals.configuration.where((s) => !isCompundState(s));
+  atomicStates.forEach((state) {
+    loop:
+    for (final s in [state, ...getProperAncestors(state, null)]) {
+      if (s is StateWithChildren && isCompundState(s)) {
+        for (final t in s.children.whereType<Transition>()) {
+          if (t.event == null && _condMatch(t)) {
+            enabledTransitions.add(t);
+            break loop;
+          }
+        }
+      }
+    }
+  });
+
+  enabledTransitions =
+      removeConflictingTransitions(enabledTransitions, globals);
+  return enabledTransitions;
+}
+
+/// The purpose of the selectTransitions() procedure is to collect the transitions that are enabled
+/// by this event in the current configuration.
+///
+/// Create an empty set of enabledTransitions. For each atomic state , find a transition whose [event]
+/// attribute matches event and whose condition evaluates to true. If multiple matching transitions are present,
+/// take the first in document order. If none are present, search in the state's ancestors in ancestry order until
+/// one is found. As soon as such a transition is found, add it to enabledTransitions, and proceed to the next
+/// atomic state in the configuration. If no such transition is found in the state or its ancestors, proceed to
+/// the next state in the configuration. When all atomic states have been visited and transitions selected, filter
+/// out any preempted transitions and return the resulting set.
+Iterable<Transition> selectTransitions(
+  Event event,
+  InterpreterGlobals globals,
+) {
+  var enabledTransitions = LinkedHashSet<Transition>();
+  final atomicStates = globals.configuration.where((s) => !isCompundState(s));
+
+  atomicStates.forEach((state) {
+    loop:
+    for (final s in [state, ...getProperAncestors(state, null)]) {
+      if (s is StateWithChildren && isCompundState(s)) {
+        for (final t in s.children.whereType<Transition>()) {
+          if (t.event != null && t.event.name == event.name && _condMatch(t)) {
+            enabledTransitions.add(t);
+            break loop;
+          }
+        }
+      }
+    }
+  });
+
+  enabledTransitions =
+      removeConflictingTransitions(enabledTransitions, globals);
+  return enabledTransitions;
+}
+
+// TODO: implement
+bool _condMatch(Transition t) => true;
+
+/// [enabledTransitions] will contain multiple transitions only if a parallel state is active.
+/// In that case, we may have one transition selected for each of its children.
+/// These transitions may conflict with each other in the sense that they have incompatible target states.
+/// Loosely speaking, transitions are compatible when each one is contained within a single [State]
+/// child of the [Parallel] element. Transitions that aren't contained within a single child force
+/// the state machine to leave the [Parallel] ancestor (even if they reenter it later).
+/// Such transitions conflict with each other, and with transitions that remain within a single [State] child,
+/// in that they may have targets that cannot be simultaneously active.
+/// The test that transitions have non-intersecting exit sets captures this requirement.
+/// (If the intersection is null, the source and targets of the two transitions are contained in
+/// separate [State] descendants of [Parallel]. If intersection is non-null, then at least one of
+/// the transitions is exiting the [Parallel]). When such a conflict occurs, then if the source
+/// state of one of the transitions is a descendant of the source state of the other, we select
+/// the transition in the descendant.
+/// Otherwise we prefer the transition that was selected by the earlier state in document order
+/// and discard the other transition. Note that targetless transitions have empty exit sets and
+/// thus do not conflict with any other transitions.
+///
+/// We start with a list of enabledTransitions and produce a conflict-free list of filteredTransitions.
+/// For each t1 in enabledTransitions, we test it against all t2 that are already selected in filteredTransitions.
+/// If there is a conflict, then if t1's source state is a descendant of t2's source state,
+/// we prefer t1 and say that it preempts t2 (so we we make a note to remove t2 from filteredTransitions).
+/// Otherwise, we prefer t2 since it was selected in an earlier state in document order, so we say that it preempts t1.
+/// (There's no need to do anything in this case since t2 is already in filteredTransitions.
+/// Furthermore, once one transition preempts t1, there is no need to test t1 against any other transitions.)
+/// Finally, if t1 isn't preempted by any transition in filteredTransitions, remove any transitions that it
+/// preempts and add it to that list.
+Iterable<Transition> removeConflictingTransitions(
+  Iterable<Transition> enabledTransitions,
+  InterpreterGlobals globals,
+) {
+  final filteredTransitions = LinkedHashSet<Transition>();
+  // toList sorts the transitions in the order of the states that selected them
+  enabledTransitions.forEach((t1) {
+    var t1Preempted = false;
+    final transitionsToRemove = LinkedHashSet<Transition>();
+    for (final t2 in filteredTransitions) {
+      final _intersection = computeExitSet([t1], globals)
+          .intersection(computeExitSet([t2], globals));
+      if (_intersection.length != 0) {
+        if (isDescendant(t1.parent, t2.parent)) {
+          transitionsToRemove.add(t2);
+        } else {
+          t1Preempted = true;
+          break;
+        }
+      }
+    }
+
+    if (!t1Preempted) {
+      transitionsToRemove.forEach((t3) => filteredTransitions.remove(t3));
+      filteredTransitions.add(t1);
+    }
+  });
+
+  return filteredTransitions;
+}
+
+/// The purpose of the microstep procedure is to process a single set of transitions.
+/// These may have been enabled by an external event, an internal event, or by the presence or
+/// absence of certain values in the data model at the current point in time. The processing of
+/// the enabled transitions must be done in parallel ('lock step') in the sense that their source
+/// states must first be exited, then their actions must be executed, and finally their target
+/// states entered.
+///
+/// If a single atomic state is active, then [enabledTransitions] will contain only a single transition.
+/// If multiple states are active (i.e., we are in a parallel region), then there may be multiple transitions,
+/// one per active atomic state (though some states may not select a transition.) In this case,
+/// the transitions are taken in the document order of the atomic states that selected them.
+void microstep(
+  Iterable<Transition> enabledTransitions,
+  InterpreterGlobals globals,
+) {
+  exitStates(enabledTransitions, globals);
+  executeTransitionContent(enabledTransitions);
+  enterStates(enabledTransitions, globals);
+}
+
+/// Compute the set of states to exit. Then remove all the states on [statesToExit] from the set of
+/// states that will have invoke processing done at the start of the next macrostep.
+/// (Suppose macrostep M1 consists of microsteps m11 and m12. We may enter state s in m11 and exit it
+/// in m12. We will add s to [globals.statesToInvoke] in m11, and must remove it in m12. In the subsequent
+/// macrostep M2, we will apply invoke processing to all states that were entered, and not exited, in M1.)
+/// Then convert [statesToExit] to a list and sort it in exitOrder.
+///
+/// For each state s in the list, if s has a deep history state h, set the history value of h to be the list
+/// of all atomic descendants of s that are members in the current configuration, else set its value to be the
+/// list of all immediate children of s that are members of the current configuration. Again for each
+/// state s in the list, first execute any onexit handlers, then cancel any ongoing invocations, and finally
+/// remove s from the current [globals.configuration].
+void exitStates(
+  Iterable<Transition> enabledTransitions,
+  InterpreterGlobals globals,
+) {
+  final statesToExit = computeExitSet(enabledTransitions, globals);
+  statesToExit.forEach((s) => globals.statesToInvoke.remove(s));
+  // TODO: sort statesToExit by exitOrder
+  statesToExit.forEach((s) {
+    // TODO: handle deep history
+
+    // TODO: execute content and cancel invokes
+    globals.configuration.remove(s);
+  });
+}
+
 /// For each transition t in enabledTransitions,if t is targetless then do nothing, else compute
 /// the transition's domain. (This will be the source state in the case of internal transitions)
 /// or the least common compound ancestor state of the source state and target states of t
 /// (in the case of external transitions. Add to the statesToExit set all states in the configuration
 /// that are descendants of the domain.
 LinkedHashSet<IState> computeExitSet(
-  List<Transition> enabledTransitions,
+  Iterable<Transition> enabledTransitions,
   InterpreterGlobals globals,
 ) {
   final statesToExit = LinkedHashSet<IState>();
@@ -24,7 +202,7 @@ LinkedHashSet<IState> computeExitSet(
 }
 
 /// For each transition in the list of enabledTransitions, execute its executable content.
-void executeTransitionContent(List<Transition> enabledTransitions) {
+void executeTransitionContent(LinkedHashSet<Transition> enabledTransitions) {
   // TODO: not implemnted
 }
 
@@ -39,7 +217,7 @@ void executeTransitionContent(List<Transition> enabledTransitions) {
 /// Finally, if s is a final state, generate relevant Done events. If we have reached a top-level final state,
 /// set running to false as a signal to stop processing.
 void enterStates(
-  List<Transition> enabledTransitions,
+  LinkedHashSet<Transition> enabledTransitions,
   InterpreterGlobals globals,
 ) {
   final statesToEnter = LinkedHashSet<IState>();
@@ -90,7 +268,7 @@ void enterStates(
 /// Then add any ancestors that will be entered within the domain of the transition.
 /// (Ancestors outside of the domain of the transition will not have been exited.)
 void computeEntrySet(
-  List<Transition> transitions,
+  LinkedHashSet<Transition> transitions,
   LinkedHashSet statesToEnter,
   LinkedHashSet statesForDefaultEntry,
   HashMap defaultHistoryContent,
@@ -282,7 +460,7 @@ LinkedHashSet<IState> getEffectiveTargetStates(Transition transition) {
   final targets = LinkedHashSet<IState>();
   // TODO: support multi targets
   final target = findOneTarget(transition.parent, transition.target);
-  // TODO: add support for history valu
+  // TODO: add support for history value
   if (target != null) targets.add(target as IState);
   return targets;
 }

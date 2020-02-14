@@ -13,7 +13,7 @@ abstract class IState implements SCXMLChild, SCXMLElement, Identifiable {
 }
 
 abstract class StateWithChildren<T>
-    implements SCXMLElement, SCXMLElementWithChildren<T> {
+    implements SCXMLElement, SCXMLElementWithChildren<T>, IState {
   List<T> get children;
 }
 

@@ -13,14 +13,6 @@ class InterpreterGlobals {
   Queue externalQueue;
   bool isRunning;
   BindingType binindg;
-  HashMap historyValue;
+  HashMap<Id, LinkedHashSet<IState>> historyValue;
 }
 
-class Event {
-  final String event;
-  final Object data;
-
-  Event(this.event, {this.data});
-
-  Event.done(Id event, {this.data}) : this.event = "done.state.${event.ref}";
-}
