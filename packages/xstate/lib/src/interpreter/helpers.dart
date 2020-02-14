@@ -307,7 +307,7 @@ void executeTransitionContent(LinkedHashSet<Transition> enabledTransitions) {
 /// Finally, if s is a final state, generate relevant Done events. If we have reached a top-level final state,
 /// set running to false as a signal to stop processing.
 void enterStates(
-  LinkedHashSet<Transition> enabledTransitions,
+  Iterable<Transition> enabledTransitions,
   InterpreterGlobals globals,
 ) {
   final statesToEnter = LinkedHashSet<IState>();
