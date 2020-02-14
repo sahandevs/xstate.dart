@@ -7,9 +7,13 @@ abstract class IState implements SCXMLChild, SCXMLElement, Identifiable {
   IState(this.id);
 
   IState._(this.id);
+  
+  // TODO: this should not be in machine_definition
+  bool isFirstEntry = true;
 }
 
-abstract class StateWithChildren<T> implements SCXMLElement, SCXMLElementWithChildren<T> {
+abstract class StateWithChildren<T>
+    implements SCXMLElement, SCXMLElementWithChildren<T> {
   List<T> get children;
 }
 
@@ -31,7 +35,15 @@ class State extends IState implements StateWithChildren<StateChild> {
 
   @override
   SCXMLElement parent;
+}
 
+class Initial implements StateChild, SCXMLElement {
+  final Transition transition;
+
+  @override
+  SCXMLElement parent;
+
+  Initial({this.transition});
 }
 
 // marker interface
@@ -66,7 +78,6 @@ class Final extends IState implements StateWithChildren<FinalStateChild> {
 }
 
 class History extends IState {
-
   /// A [Transition] whose [Transition.target] specifies the default history configuration.
   /// Occurs once. In a conformant SCXML document,
   /// this transition must not contain 'cond' or 'event' attributes,
