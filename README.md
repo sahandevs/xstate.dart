@@ -70,7 +70,7 @@ machine.transition('loaded.paused', 'EJECT'); // not_loaded
 ##### Tooling
 - [ ] Run a webserver in watch mode and show all the machines in xstatejs's visualizer
 ###### Dart Analyzer Plugin
-- [ ] Show outline for a machine and it's states
+- [ ] Show outline for a machine and its states
 
 ![image](https://user-images.githubusercontent.com/1113944/74012163-d119a280-499e-11ea-8256-a8ad74b40501.png)
 
